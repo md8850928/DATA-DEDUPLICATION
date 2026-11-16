@@ -18,22 +18,6 @@ database/demo-schema.sql     Empty local demo tables (no accounts or files)
 START-AND-CHECK.ps1          Compile, verify MySQL, deploy, start Tomcat, and check the home page
 ```
 
-## Open the static HTML page
-
-To open the front page directly in your browser without starting Tomcat, run this from the project folder in PowerShell:
-
-```powershell
-Start-Process ".\WebContent\index.html"
-```
-
-If your terminal is already inside the `WebContent` folder, use:
-
-```powershell
-Start-Process ".\index.html"
-```
-
-This only previews the static HTML page. JSP pages and servlets still require the Tomcat setup below.
-
 ## First-time setup on Windows
 
 1. Install JDK 8, MySQL Server 5.7, and Apache Tomcat 9. The startup script expects Tomcat at `%LOCALAPPDATA%\Programs\apache-tomcat-9.0.124`; edit `$tomcatHome` in the script if yours is elsewhere.
