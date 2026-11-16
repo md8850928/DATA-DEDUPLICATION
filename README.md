@@ -1,114 +1,64 @@
 # Data Deduplication System
 
-Java · JSP · Servlets · Apache Tomcat 7 · MySQL
+A Java/JSP/Servlet academic project that stores uploaded files, tracks duplicate content, manages key requests, and demonstrates owner, user, proxy, and administrator workflows.
 
-A Java web application that demonstrates secure file storage through data deduplication, controlled key sharing, role-based workflows, and download monitoring.
+## Stack
 
-## Features
+- JDK 8
+- Apache Tomcat 9
+- MySQL 5.7
+- MySQL Connector/J and Gson, included under `WebContent/WEB-INF/lib`
 
-- Data-owner and user registration/login
-- File upload with duplicate-file detection
-- File ID generation and two-part access keys
-- Search, key-request, owner approval, and controlled download flow
-- Download-attempt and unauthorized-access monitoring
-- Data Manager, Proxy Server, and Malicious User demonstration roles
-- Admin monitoring pages for stored files, users, owners, and attack records
+## Project layout
 
-## Technology Used
+```text
+src/                         Java servlets, database helper, and model classes
+WebContent/                  JSP pages, static assets, and web.xml
+database/demo-schema.sql     Empty local demo tables (no accounts or files)
+START-AND-CHECK.ps1          Compile, verify MySQL, deploy, start Tomcat, and check the home page
+```
 
-- Java 8
-- JSP and Java Servlets
-- Apache Tomcat 7
-- MySQL 5.5+ / compatible MySQL server
-- HTML, CSS, JavaScript, Bootstrap
+## First-time setup on Windows
 
-## Run Locally
+1. Install JDK 8, MySQL Server 5.7, and Apache Tomcat 9. The startup script expects Tomcat at `%LOCALAPPDATA%\Programs\apache-tomcat-9.0.124`; edit `$tomcatHome` in the script if yours is elsewhere.
+2. Start the `MySQL57` Windows service and open `database/demo-schema.sql` in MySQL Workbench. Execute the script to create the empty `Datadeduplication-2024` database and required tables. It does not create demo users or include personal data.
+3. In VS Code, open **Terminal → New Terminal** in the project folder and run:
 
-### 1. Create the database
+   ```powershell
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\START-AND-CHECK.ps1"
+   ```
 
-The repository includes a safe empty schema. It contains no real accounts, passwords, or uploaded files.
+   This uses a temporary execution-policy bypass for the child PowerShell process, avoiding the common “running scripts is disabled” error. The script asks for your MySQL password without displaying it, compiles the Java sources, confirms the required tables exist, deploys to Tomcat, and opens the app at `http://localhost:8080/data-deduplication-desktop/`.
 
-From the project folder, run:
+The database helper reads `DB_PASSWORD` from the process environment. It is intentionally ignored by Git (`src/com/DBConnect/Dataduplicate/DbConnection.java`), so never commit it. If that local file is missing, the startup script creates it from the tracked `DbConnection.java.example` template. The script does not write the password into source files.
+
+## Manual build and deploy
+
+From PowerShell in the project folder:
 
 ```powershell
-mysql -u root -p < database/demo-schema.sql
+$src = Get-ChildItem .\src -Recurse -Filter *.java | ForEach-Object FullName
+New-Item -ItemType Directory -Force .\build\classes | Out-Null
+javac -cp ".\WebContent\WEB-INF\lib\*" -d .\build\classes $src
 ```
 
-### 2. Configure database access
+For normal local use, prefer `START-AND-CHECK.ps1`, which also deploys the web assets and compiled classes and checks the result.
 
-Copy:
+## Smoke-test workflow
 
-```text
-src/com/DBConnect/Dataduplicate/DbConnection.java.example
-```
+Use dummy accounts and a small text file. Follow [TEST-CHECKLIST.md](TEST-CHECKLIST.md) to check registration, approval, duplicate upload handling, key requests, and downloads.
 
-to:
+## Known limitations
 
-```text
-src/com/DBConnect/Dataduplicate/DbConnection.java
-```
+- This is a legacy academic demo, not production-ready software. Some servlet queries still build SQL by concatenating request values, login passwords are stored as plain text, and the demo admin login is hard-coded. Do not expose it to the public internet or use real credentials/data.
+- Some older demo routes are not connected to the included schema. The startup script checks the core schema and static/JSP home page, not every user workflow.
+- `START-AND-CHECK.ps1` uses Tomcat's default HTTP port 8080 and expects that port to be free so the started Tomcat process inherits the database password.
+- Tomcat requires the Servlet/JSP APIs from its own installation. The startup script removes the duplicate `servlet-api.jar` and `jsp-api.jar` from the deployed app.
 
-Then set your own local MySQL username and password in `DbConnection.java`. Do not commit this file.
+## Troubleshooting
 
-### 3. Deploy and start
-
-Configure the project in Eclipse with Tomcat 7, or deploy `WebContent` and compiled classes to Tomcat.
-
-Open:
-
-```text
-http://localhost:8084/Data-depulication-2024/
-```
-
-If Tomcat and MySQL are installed as Windows services, run `START-AND-CHECK.ps1` as Administrator to start and verify the project.
-
-## Open and Run with VS Code
-
-1. Open **VS Code**.
-2. Select **File → Open Folder** and choose the project folder.
-3. Open **Terminal → New Terminal** in VS Code.
-4. To open the already deployed application, run:
-
-```powershell
-Start-Process "http://localhost:8084/Data-depulication-2024/"
-```
-
-If the page does not open, close VS Code, reopen it as **Administrator**, then run:
-
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass -Force
-.\START-AND-CHECK.ps1
-```
-
-VS Code is used to view and edit the source code. Apache Tomcat runs the Java/JSP application and MySQL stores its data.
-
-## Demonstration Flow
-
-1. Register and log in as a Data Owner.
-2. Upload a small sample text file from `DEMO-FILES`.
-3. Register and log in as a User.
-4. Search for the uploaded file and request the access keys.
-5. Log in as the Data Owner, approve the request, and share the keys.
-6. Log in again as the User and download with the file ID and keys.
-7. Use the monitoring roles to view download attempts and attack records.
-
-## Repository Structure
-
-```text
-src/                 Java Servlets, JavaBeans, DAO, and database helper
-WebContent/          JSP pages, front-end assets, and Tomcat configuration
-database/            Safe empty MySQL demo schema
-DEMO-FILES/          Sample files and walkthrough for demonstrations
-START-AND-CHECK.ps1  Local service/startup verification script
-```
-
-## Important Notes
-
-- This is an academic/local demonstration project, not a production cloud-storage platform.
-- GitHub Pages displays the project documentation only; the full JSP application requires local Tomcat and MySQL.
-- Use dummy accounts and sample files only.
-- Before production use, add password hashing, parameterized queries, stronger authorization checks, HTTPS, modern dependency versions, and automated tests.
-
-## License
-
-Provided for educational and portfolio purposes.
+- **`javac` not found:** Install/configure the JDK and reopen PowerShell.
+- **MySQL service stopped:** Start `MySQL57`, then rerun the script.
+- **Missing tables or connection failed:** Execute `database/demo-schema.sql` in MySQL Workbench, check that the server is running, then rerun the script and enter the correct local password.
+- **Port 8080 is in use:** Stop the existing Tomcat process before running the script.
+- **HTTP check failed:** Review the newest logs in `%LOCALAPPDATA%\Programs\apache-tomcat-9.0.124\logs`.

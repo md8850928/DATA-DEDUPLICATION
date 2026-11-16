@@ -26,7 +26,16 @@ public class DbConnection {
 		Connection con = null;
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
-			con = DriverManager.getConnection("jdbc:mysql://localhost:3306/Datadeduplication-2024", "root", "YOUR_MYSQL_ROOT_PASSWORD");
+			String password = System.getenv("DB_PASSWORD");
+			String user = System.getenv("DB_USER");
+			if (password == null || password.length() == 0) {
+				throw new SQLException("Set the DB_PASSWORD environment variable before starting Tomcat.");
+			}
+			if (user == null || user.length() == 0) {
+				user = "root";
+			}
+			con = DriverManager.getConnection(
+					"jdbc:mysql://localhost:3306/Datadeduplication-2024?useSSL=false", user, password);
 			return con;
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
